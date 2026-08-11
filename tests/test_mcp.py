@@ -71,3 +71,14 @@ def test_drc_tool(tmp_path):
     assert result["status"] == "ok"
     assert result["ok"] is True
     assert result["errors"] == 0
+
+
+def test_validate_path_within_blocks_absolute_escape(tmp_path):
+    """Containment is the half traversal-rejection cannot do."""
+    from antenna_cad.paths import validate_path_within
+
+    inside = tmp_path / "runs" / "a.txt"
+    assert validate_path_within(inside, tmp_path) == inside.resolve()
+
+    with pytest.raises(ValueError, match="escapes root"):
+        validate_path_within("/etc/passwd", tmp_path)

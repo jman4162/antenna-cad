@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import enum
 from pathlib import Path
 from typing import Annotated
 
@@ -145,14 +146,22 @@ mcp_app = typer.Typer(help="Model Context Protocol server (install the 'mcp' ext
 app.add_typer(mcp_app, name="mcp")
 
 
+class _Transport(enum.StrEnum):
+    stdio = "stdio"
+    http = "http"
+
+
 @mcp_app.command("serve")
 def mcp_serve(
-    transport: Annotated[str, typer.Option(help="Transport: stdio")] = "stdio",
+    transport: Annotated[
+        _Transport, typer.Option(help="Transport: stdio or http")
+    ] = _Transport.stdio,
 ) -> None:
     """Expose the design tools to MCP-compatible agents."""
     from antenna_cad.agent.server import run_server
 
-    run_server(transport=transport)
+    # The SDK's name for the HTTP transport; users should not have to know it.
+    run_server(transport="streamable-http" if transport is _Transport.http else "stdio")
 
 
 @app.command()

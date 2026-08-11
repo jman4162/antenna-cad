@@ -134,6 +134,13 @@ antenna-cad mcp serve
 }
 ```
 
+## Conventions
+
+The MCP surface follows the family convention documented in
+[APAB's mcp-conventions.md](https://github.com/jman4162/agentic-phased-array-builder/blob/main/docs/mcp-conventions.md):
+same server layout, tool naming, error contract, and path-safety rules, so an
+agent connected to both servers sees one house style.
+
 ## Citing
 
 If antenna-cad contributes to academic work, please cite it (GitHub's "Cite this

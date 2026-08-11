@@ -16,16 +16,12 @@ from pydantic import Field
 
 from antenna_cad.agent.server import get_mcp
 
+# Shared with any future surface; antenna_cad.paths also carries the
+# containment half of the convention, for callers that have a workspace root.
+from antenna_cad.paths import reject_path_traversal as _reject_path_traversal
+
 logger = logging.getLogger(__name__)
 mcp = get_mcp()
-
-
-def _reject_path_traversal(path: str) -> Path:
-    """Refuse any path containing parent-directory traversal."""
-    p = Path(path)
-    if ".." in p.parts:
-        raise ValueError(f"path {path!r} contains '..' traversal and is not allowed")
-    return p
 
 
 SpecPath = Annotated[str, Field(description="Path to a design spec YAML file")]
