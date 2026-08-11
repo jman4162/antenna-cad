@@ -1,0 +1,161 @@
+[build-system]
+requires = ["hatchling>=1.27", "hatch-vcs>=0.4"]
+build-backend = "hatchling.build"
+
+[project]
+name = "antenna-cad"
+dynamic = ["version"]
+description = "Compile antenna and phased-array design intent into simulation-ready KiCad PCB layouts"
+readme = "README.md"
+requires-python = ">=3.11"
+license = "MIT"
+license-files = ["LICENSE"]
+authors = [{ name = "John Hodge", email = "jhodge007@gmail.com" }]
+maintainers = [{ name = "John Hodge", email = "jhodge007@gmail.com" }]
+keywords = [
+  "antenna",
+  "phased-array",
+  "pcb",
+  "kicad",
+  "microstrip",
+  "patch-antenna",
+  "openems",
+  "electromagnetics",
+  "rf",
+]
+classifiers = [
+  "Development Status :: 2 - Pre-Alpha",
+  "Intended Audience :: Science/Research",
+  "Operating System :: OS Independent",
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+  "Programming Language :: Python :: 3.13",
+  "Programming Language :: Python :: 3.14",
+  "Topic :: Scientific/Engineering :: Physics",
+  "Topic :: Scientific/Engineering :: Electronic Design Automation (EDA)",
+  "Typing :: Typed",
+]
+dependencies = [
+  "numpy>=1.26",
+  "shapely>=2.0",
+  "pint>=0.24",
+  "pydantic>=2.7",
+  "xarray>=2024.3",
+  "typer>=0.12",
+  "pyyaml>=6.0",
+  "matplotlib>=3.8",
+  "scikit-rf>=1.0",
+]
+
+[project.optional-dependencies]
+dxf = ["ezdxf>=1.3"]
+
+[project.scripts]
+antenna-cad = "antenna_cad.cli:app"
+
+[project.urls]
+Homepage = "https://github.com/jman4162/antenna-cad"
+Source = "https://github.com/jman4162/antenna-cad"
+Issues = "https://github.com/jman4162/antenna-cad/issues"
+Changelog = "https://github.com/jman4162/antenna-cad/blob/main/CHANGELOG.md"
+
+[dependency-groups]
+test = [
+  "pytest>=8.3",
+  "pytest-cov>=6.0",
+  "pytest-regressions>=2.7",
+  "hypothesis[numpy]>=6.130",
+]
+lint = ["mypy>=1.15", "ruff>=0.16", "types-PyYAML>=6.0"]
+dev = [
+  { include-group = "test" },
+  { include-group = "lint" },
+]
+
+# ----------------------------------------------------------------- hatch / vcs
+[tool.hatch.version]
+source = "vcs"
+fallback-version = "0.0.0.dev0"
+
+[tool.hatch.build.hooks.vcs]
+version-file = "src/antenna_cad/_version.py"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/antenna_cad"]
+
+[tool.hatch.build.targets.sdist]
+exclude = [".github", "scripts/.slopvenv"]
+
+# ------------------------------------------------------------------------ ruff
+[tool.ruff]
+line-length = 100
+src = ["src", "tests"]
+
+[tool.ruff.lint]
+extend-select = [
+  "B",    # flake8-bugbear
+  "I",    # isort
+  "UP",   # pyupgrade
+  "C4",   # comprehensions
+  "SIM",  # simplify
+  "RET",  # return
+  "PT",   # pytest style
+  "NPY",  # numpy-specific
+  "RUF",  # ruff-specific
+  "D",    # pydocstyle
+  "ARG",  # unused arguments
+  "PTH",  # use pathlib
+  "TID",  # tidy imports
+  "ICN",  # import conventions
+]
+ignore = [
+  "D105", # magic method docstring
+  "D107", # __init__ docstring (documented on the class)
+  "D203", # incompatible with D211
+  "D213", # incompatible with D212
+]
+
+[tool.ruff.lint.pydocstyle]
+convention = "numpy"
+
+[tool.ruff.lint.per-file-ignores]
+"tests/**" = ["D", "ARG"]
+"docs/**" = ["D"]
+
+# ------------------------------------------------------------------------ mypy
+[tool.mypy]
+# No `python_version` pin: mypy follows the interpreter it runs under. Pinning it to the 3.11
+# floor makes numpy's own stubs (which use PEP 695 `type` statements) fail to parse.
+strict = true
+warn_unreachable = true
+files = ["src/antenna_cad"]
+
+[[tool.mypy.overrides]]
+module = ["shapely.*", "skrf.*", "scipy.*", "pint.*", "phased_array.*", "CSXCAD.*", "openEMS.*"]
+ignore_missing_imports = true
+
+[[tool.mypy.overrides]]
+module = "tests.*"
+disallow_untyped_defs = false
+
+# ---------------------------------------------------------------------- pytest
+[tool.pytest.ini_options]
+minversion = "8.0"
+testpaths = ["tests", "src/antenna_cad"]
+addopts = ["-ra", "--strict-markers", "--strict-config", "--doctest-modules"]
+xfail_strict = true
+filterwarnings = ["error"]
+markers = [
+  "slow: long-running electromagnetic simulations",
+  "kicad: requires a local kicad-cli install",
+  "openems: requires openEMS Python bindings or Docker",
+]
+
+# -------------------------------------------------------------------- coverage
+[tool.coverage.run]
+source = ["src/antenna_cad"]
+branch = true
+
+[tool.coverage.report]
+exclude_also = ["if TYPE_CHECKING:", "raise NotImplementedError", "@overload"]

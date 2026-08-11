@@ -1,0 +1,20 @@
+name: prose
+
+on:
+  pull_request:
+    paths: ["**/*.md", "src/**/*.py"]
+  workflow_dispatch:
+
+jobs:
+  prose:
+    name: prose lint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: astral-sh/setup-uv@v7
+        with:
+          enable-cache: true
+      # Advisory: flags writing patterns, not authorship, and has known domain
+      # false positives (see scripts/slopcheck.sh). Never gate a merge on it.
+      - run: scripts/slopcheck.sh
+        continue-on-error: true

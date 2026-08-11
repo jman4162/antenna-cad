@@ -1,0 +1,28 @@
+# Local-only notes (background docs, scratch specs)
+*.local.md
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+dist/
+.venv/
+src/antenna_cad/_version.py
+
+# Tooling caches
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.hypothesis/
+.coverage
+coverage.xml
+htmlcov/
+
+# Build artifacts and simulation outputs
+build/
+runs/
+*.kicad_pcb-bak
+fp-info-cache
+
+# OS
+.DS_Store
