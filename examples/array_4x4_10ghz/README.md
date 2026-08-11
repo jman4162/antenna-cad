@@ -4,6 +4,10 @@ Sixteen patches on a 0.6 λ0 lattice with a three-level corporate tree (columns 
 rows → columns → elements), quarter-wave transformers at every split, and phase
 trombones on mirrored rows.
 
+| Board | S11 | Pattern |
+|:---:|:---:|:---:|
+| ![board](https://raw.githubusercontent.com/jman4162/antenna-cad/main/docs/images/array_4x4_top.png) | ![s11](https://raw.githubusercontent.com/jman4162/antenna-cad/main/docs/images/array_4x4_s11.png) | ![pattern](https://raw.githubusercontent.com/jman4162/antenna-cad/main/docs/images/array_4x4_pattern.png) |
+
 ```bash
 uv run antenna-cad layout examples/array_4x4_10ghz/spec.yaml -o build/array_4x4
 uv run antenna-cad drc build/array_4x4/array_4x4_10ghz.kicad_pcb

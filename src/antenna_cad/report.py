@@ -63,7 +63,8 @@ def _geometry_checks(design: PhysicalDesign) -> StepOutcome:
     )
 
 
-def _plot_s11(result: SimulationResult, path: Path) -> None:
+def plot_s11(result: SimulationResult, path: Path) -> None:
+    """Write the |S11| sweep plot for a simulation result."""
     import matplotlib as mpl
 
     mpl.use("Agg")
@@ -83,7 +84,8 @@ def _plot_s11(result: SimulationResult, path: Path) -> None:
     plt.close(fig)
 
 
-def _plot_pattern(result: SimulationResult, path: Path) -> None:
+def plot_pattern(result: SimulationResult, path: Path) -> None:
+    """Write normalized far-field pattern cuts for a simulation result."""
     import matplotlib as mpl
 
     mpl.use("Agg")
@@ -161,11 +163,11 @@ def verify_design(
             )
         )
         s11_path = output_dir / "s11.png"
-        _plot_s11(result, s11_path)
+        plot_s11(result, s11_path)
         artifacts["s11_plot"] = str(s11_path)
         if result.far_field is not None:
             pattern_path = output_dir / "pattern.png"
-            _plot_pattern(result, pattern_path)
+            plot_pattern(result, pattern_path)
             artifacts["pattern_plot"] = str(pattern_path)
     else:
         steps.append(StepOutcome(name="em_simulation", status="skipped", detail="no solver"))

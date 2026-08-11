@@ -121,55 +121,64 @@ class OpenEMS:
 
     def load_results(self, run_dir: str | Path) -> SimulationResult:
         """Parse a completed run directory into a :class:`SimulationResult`."""
-        import numpy as np
-        import xarray as xr
+        return result_from_npz(Path(run_dir) / "results.npz", mode=self.mode)
 
-        data = np.load(Path(run_dir) / "results.npz")
-        f = data["f"]
-        s11 = data["s11"]
-        s_parameters = xr.Dataset(
-            {"s11": ("frequency", s11), "zin": ("frequency", data["zin"])},
-            coords={"frequency": f},
+
+def result_from_npz(npz_path: str | Path, mode: str = "offline") -> SimulationResult:
+    """Rebuild a :class:`SimulationResult` from a runner ``results.npz`` file.
+
+    Works without openEMS installed — used both by :meth:`OpenEMS.load_results`
+    and by tooling that replots committed run data (``figures/make_figures.py``).
+    """
+    import numpy as np
+    import xarray as xr
+
+    data = np.load(Path(npz_path))
+    f = data["f"]
+    s11 = data["s11"]
+    s_parameters = xr.Dataset(
+        {"s11": ("frequency", s11), "zin": ("frequency", data["zin"])},
+        coords={"frequency": f},
+    )
+
+    s11_db = 20 * np.log10(np.abs(s11))
+    # Report the match at the resonance the runner identified (its edge-guarded
+    # search), not the global minimum, which can be a band-edge artifact.
+    res_idx = int(np.argmin(np.abs(f - data["f_res"])))
+    metrics: dict[str, float] = {
+        "f_res_hz": float(data["f_res"]),
+        "s11_min_db": float(s11_db[res_idx]),
+    }
+    # -10 dB bandwidth of the contiguous band containing the resonance (other
+    # dips elsewhere in the sweep must not inflate it).
+    below = s11_db <= -10.0
+    if below[res_idx]:
+        lo = res_idx
+        while lo > 0 and below[lo - 1]:
+            lo -= 1
+        hi = res_idx
+        while hi < len(f) - 1 and below[hi + 1]:
+            hi += 1
+        metrics["bandwidth_10db_hz"] = float(f[hi] - f[lo])
+
+    far_field = None
+    if "e_norm" in data:
+        far_field = xr.Dataset(
+            {"e_norm": (("theta", "phi"), data["e_norm"])},
+            coords={"theta": data["theta_deg"], "phi": data["phi_deg"]},
+            attrs={"Dmax": float(data["dmax"]), "Prad": float(data["prad"])},
         )
+        dmax = float(data["dmax"])
+        metrics["directivity_dbi"] = float(10 * np.log10(dmax))
+        if "p_acc" in data and data["prad"] > 0:
+            efficiency = float(data["prad"]) / float(data["p_acc"])
+            # Numerical noise can push efficiency epsilon over 1 for lossless models.
+            efficiency = min(efficiency, 1.0)
+            metrics["gain_dbi"] = float(10 * np.log10(dmax * efficiency))
 
-        s11_db = 20 * np.log10(np.abs(s11))
-        # Report the match at the resonance the runner identified (its edge-guarded
-        # search), not the global minimum, which can be a band-edge artifact.
-        res_idx = int(np.argmin(np.abs(f - data["f_res"])))
-        metrics: dict[str, float] = {
-            "f_res_hz": float(data["f_res"]),
-            "s11_min_db": float(s11_db[res_idx]),
-        }
-        # -10 dB bandwidth of the contiguous band containing the resonance (other
-        # dips elsewhere in the sweep must not inflate it).
-        below = s11_db <= -10.0
-        if below[res_idx]:
-            lo = res_idx
-            while lo > 0 and below[lo - 1]:
-                lo -= 1
-            hi = res_idx
-            while hi < len(f) - 1 and below[hi + 1]:
-                hi += 1
-            metrics["bandwidth_10db_hz"] = float(f[hi] - f[lo])
-
-        far_field = None
-        if "e_norm" in data:
-            far_field = xr.Dataset(
-                {"e_norm": (("theta", "phi"), data["e_norm"])},
-                coords={"theta": data["theta_deg"], "phi": data["phi_deg"]},
-                attrs={"Dmax": float(data["dmax"]), "Prad": float(data["prad"])},
-            )
-            dmax = float(data["dmax"])
-            metrics["directivity_dbi"] = float(10 * np.log10(dmax))
-            if "p_acc" in data and data["prad"] > 0:
-                efficiency = float(data["prad"]) / float(data["p_acc"])
-                # Numerical noise can push efficiency epsilon over 1 for lossless models.
-                efficiency = min(efficiency, 1.0)
-                metrics["gain_dbi"] = float(10 * np.log10(dmax * efficiency))
-
-        return SimulationResult(
-            s_parameters=s_parameters,
-            far_field=far_field,
-            metrics=metrics,
-            solver={"name": "openEMS", "mode": self.mode},
-        )
+    return SimulationResult(
+        s_parameters=s_parameters,
+        far_field=far_field,
+        metrics=metrics,
+        solver={"name": "openEMS", "mode": mode},
+    )

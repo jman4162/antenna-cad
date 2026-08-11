@@ -4,6 +4,19 @@ All notable changes to antenna-cad are recorded here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); versions follow
 [SemVer](https://semver.org/).
 
+## [0.1.1] - 2026-08-11
+
+### Added
+
+- README visuals: board renders, S11 sweeps, and pattern cuts for all three
+  examples, regenerable via `figures/make_figures.py` from committed run data;
+  pipeline diagram, verified-examples table, MCP quickstart, badges.
+- Citation support: `CITATION.cff` (GitHub "Cite this repository") and a BibTeX
+  `@software` entry in the README. Archival DOI planned via Zenodo.
+- `antenna_cad.report.plot_s11`/`plot_pattern` and
+  `antenna_cad.solvers.openems.solver.result_from_npz` are now public, so plots
+  rebuild from saved run data without a solver install.
+
 ## [0.1.0] - 2026-08-10
 
 ### Added

@@ -1,0 +1,30 @@
+cff-version: 1.2.0
+message: "If you use this software, please cite it as below."
+title: "antenna-cad: a design compiler for antenna and phased-array PCBs"
+abstract: >-
+  A Python package that compiles antenna design requirements into
+  manufacturable KiCad PCB layouts through a typed intermediate
+  representation: analytic synthesis of microstrip patches and corporate
+  feed networks, deterministic board emission with real design-rule
+  checking, full-wave verification with openEMS FDTD, and a
+  simulate-and-correct tuning loop. Includes an MCP server so software
+  agents can drive the same deterministic pipeline.
+type: software
+authors:
+  - family-names: Hodge
+    given-names: John
+    email: jhodge007@gmail.com
+repository-code: "https://github.com/jman4162/antenna-cad"
+license: MIT
+version: 0.1.1
+date-released: "2026-08-11"
+keywords:
+  - antenna
+  - phased array
+  - PCB
+  - KiCad
+  - microstrip
+  - patch antenna
+  - openEMS
+  - electromagnetics
+  - electronic design automation

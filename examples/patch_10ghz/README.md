@@ -3,6 +3,10 @@
 The MVP acceptance workflow: one spec file in, a DRC-checked and full-wave-verified
 KiCad board out. Run everything from the repository root.
 
+| Board | S11 | Pattern |
+|:---:|:---:|:---:|
+| ![board](https://raw.githubusercontent.com/jman4162/antenna-cad/main/docs/images/patch_top.png) | ![s11](https://raw.githubusercontent.com/jman4162/antenna-cad/main/docs/images/patch_s11.png) | ![pattern](https://raw.githubusercontent.com/jman4162/antenna-cad/main/docs/images/patch_pattern.png) |
+
 ## 1. Synthesize and inspect
 
 ```bash

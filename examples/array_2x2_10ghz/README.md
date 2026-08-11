@@ -4,6 +4,10 @@ Four inset-fed patches on a 0.6 λ0 lattice, fed by a T-junction corporate tree:
 50-ohm routing, 70.7-ohm quarter-wave transformers into each split, and a half-wave
 phase trombone on the arms serving the mirrored (fed-from-above) row.
 
+| Board | S11 | Pattern |
+|:---:|:---:|:---:|
+| ![board](https://raw.githubusercontent.com/jman4162/antenna-cad/main/docs/images/array_2x2_top.png) | ![s11](https://raw.githubusercontent.com/jman4162/antenna-cad/main/docs/images/array_2x2_s11.png) | ![pattern](https://raw.githubusercontent.com/jman4162/antenna-cad/main/docs/images/array_2x2_pattern.png) |
+
 ```bash
 uv run antenna-cad layout examples/array_2x2_10ghz/spec.yaml -o build/array_2x2
 uv run antenna-cad drc build/array_2x2/array_2x2_10ghz.kicad_pcb
