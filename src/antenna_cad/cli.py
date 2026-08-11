@@ -89,12 +89,17 @@ def report(
     spec: SpecArg,
     output: OutOpt = Path("build"),
     solver_mode: Annotated[str, typer.Option(help="openEMS mode: auto|native|docker|off")] = "auto",
+    tune: Annotated[
+        bool, typer.Option(help="Iterate simulate-and-correct before the final report")
+    ] = False,
 ) -> None:
     """Run the full closed loop: synthesize, DRC, simulate, report."""
     from antenna_cad.designspec import DesignSpec
     from antenna_cad.report import verify_design
 
-    design = DesignSpec.load(spec).synthesize()
+    loaded = DesignSpec.load(spec)
+    design = loaded.synthesize()
+    output.mkdir(parents=True, exist_ok=True)
     solver = None
     if solver_mode != "off":
         from antenna_cad.solvers.openems import OpenEMS, OpenEMSNotAvailableError
@@ -103,6 +108,17 @@ def report(
             solver = OpenEMS(workdir=output / "runs", mode=solver_mode)  # type: ignore[arg-type]
         except OpenEMSNotAvailableError as exc:
             typer.echo(f"simulation skipped: {exc}", err=True)
+    if tune and solver is not None:
+        from antenna_cad.elements import RectangularPatch
+        from antenna_cad.tune import tune_patch
+
+        outcome = tune_patch(RectangularPatch.synthesize(loaded.problem), solver)
+        for step in outcome.steps:
+            typer.echo(
+                f"tune {step.iteration}: f_res {step.f_res_hz / 1e9:.3f} GHz, "
+                f"S11 {step.s11_min_db:.1f} dB"
+            )
+        design = outcome.patch.to_design(name=loaded.name)
     design.to_yaml(output / f"{design.name}.design.yaml")
     result = verify_design(design, output, solver=solver)
     typer.echo(Path(output, "report.md").read_text())

@@ -75,3 +75,13 @@ class TestSynthesizedPatch:
         low = RectangularPatch.synthesize(DesignProblem(center_frequency="5 GHz"))
         high = RectangularPatch.synthesize(DesignProblem(center_frequency="28 GHz"))
         assert high.width.magnitude < low.width.magnitude
+
+
+class TestInsetExponent:
+    def test_cos4_shallower_than_cos2(self):
+        y2 = inset_depth(9e-3, 228.0, 50.0, exponent=2.0)
+        y4 = inset_depth(9e-3, 228.0, 50.0, exponent=4.0)
+        assert y4 < y2
+
+    def test_target_above_edge_returns_zero(self):
+        assert inset_depth(9e-3, 40.0, 50.0) == 0.0

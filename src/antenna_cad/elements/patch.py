@@ -3,8 +3,9 @@
 The transmission-line model (Balanis, *Antenna Theory*, ch. 14) sizes the radiator:
 width from the standard efficiency formula, length from the effective permittivity and
 fringing extension, and the inset-feed depth from the slot-conductance edge resistance
-with the cos^2 inset taper. These values land within a few percent of full-wave
-results on thin substrates; the simulation loop closes the rest.
+with a cos^4 taper (the notched-inset correction; see :func:`inset_depth`). These
+values land within a few percent of full-wave results on thin substrates; the
+simulation loop (:mod:`antenna_cad.tune`) closes the rest.
 """
 
 from __future__ import annotations
@@ -69,11 +70,18 @@ def edge_resistance(frequency_hz: float, width_m: float, length_m: float) -> flo
     return 1 / (2 * (g1 + g12))
 
 
-def inset_depth(length_m: float, edge_r: float, target_r: float) -> float:
-    """Inset distance in meters where the cos^2-tapered resistance equals ``target_r``."""
+def inset_depth(length_m: float, edge_r: float, target_r: float, exponent: float = 2.0) -> float:
+    """Inset distance in meters where the tapered input resistance equals ``target_r``.
+
+    ``exponent=2`` is the classic probe-feed taper ``R(y) = R_edge cos^2(pi y / L)``
+    (Balanis eq. 14-20a). Notched inset feeds fall off faster; the standard empirical
+    correction is a cos^4 profile (``exponent=4``), which full-wave results here and
+    in the literature support, so synthesis uses that for the notched geometry.
+    """
     if target_r >= edge_r:
         return 0.0
-    return length_m / math.pi * math.acos(math.sqrt(target_r / edge_r))
+    ratio = (target_r / edge_r) ** (1.0 / exponent)
+    return length_m / math.pi * math.acos(ratio)
 
 
 class RectangularPatch(BaseModel):
@@ -113,7 +121,7 @@ class RectangularPatch(BaseModel):
         w_m = patch_width(f_hz, eps_r)
         l_m = patch_length(f_hz, w_m, h_m, eps_r)
         r_edge = edge_resistance(f_hz, w_m, l_m)
-        y0_m = inset_depth(l_m, r_edge, to_ohm(problem.impedance))
+        y0_m = inset_depth(l_m, r_edge, to_ohm(problem.impedance), exponent=4.0)
         feed_w_m = synthesize_width(to_ohm(problem.impedance), h_m, eps_r)
 
         return cls(

@@ -35,6 +35,10 @@ class SimulationConfig(BaseModel):
     threads: int = 0  # 0 = solver default
     theta_step_deg: float = 2.0
     phi_cuts_deg: tuple[float, ...] = (0.0, 90.0)
+    #: "msl" excites the feed line with a proper microstrip port (accurate reference
+    #: plane for edge-launched designs); "lumped" is a vertical 50-ohm probe at the
+    #: port position (simple, tutorial-style).
+    port_model: str = "msl"
 
 
 class SimulationResult(BaseModel):

@@ -1,5 +1,6 @@
 """Tests for the openEMS spec builder (no solver required)."""
 
+import itertools
 import json
 
 import pytest
@@ -41,11 +42,20 @@ class TestSpecStructure:
         assert heights["radiator"] == pytest.approx(0.508)
         assert heights["ground"] == 0.0
 
-    def test_port_spans_substrate(self, spec):
+    def test_msl_port_default(self, spec):
         port = spec["port"]
-        assert port["start"][2] == 0.0
-        assert port["stop"][2] == pytest.approx(0.508)
+        assert port["type"] == "msl"
         assert port["resistance"] == 50.0
+        assert port["z_top"] == pytest.approx(0.508)
+        assert port["prop_span"][0] == 0.0
+        assert port["prop_span"][1] > 4 * 0.508
+        assert 0 < port["meas_shift"] < port["prop_span"][1]
+
+    def test_lumped_port_opt_in(self, design):
+        lumped = build_spec(design, SimulationConfig(port_model="lumped"))["port"]
+        assert lumped["type"] == "lumped"
+        assert lumped["start"][2] == 0.0
+        assert lumped["stop"][2] == pytest.approx(0.508)
 
     def test_box_encloses_board_with_air(self, spec, design):
         minx, _miny, maxx, _maxy = design.board.outline.bounds
@@ -64,8 +74,10 @@ class TestMeshLines:
             assert lines[-1] == pytest.approx(spec["box"][axis][1])
 
     def test_port_position_meshed(self, spec):
-        px = spec["port"]["start"][0]
-        assert any(abs(line - px) < 1e-9 for line in spec["mesh"]["x"])
+        px = spec["port"]["center_x"]
+        assert any(abs(line - px) < 1e-6 for line in spec["mesh"]["x"])
+        meas_y = spec["port"]["prop_span"][0] + spec["port"]["meas_shift"]
+        assert any(abs(line - meas_y) < 0.1 for line in spec["mesh"]["y"])
 
     def test_thirds_lines_bracket_metal_edges(self, spec, design):
         # Each x-edge of the patch should have nearby refined lines on both sides.
@@ -95,3 +107,18 @@ class TestProtocol:
 
         with pytest.raises(OpenEMSSpecError, match="exactly one port"):
             build_spec(PhysicalDesign.from_dict(stripped), SimulationConfig())
+
+
+class TestMeshMerge:
+    def test_close_lines_merge(self):
+        from antenna_cad.solvers.openems.spec import _merge_close
+
+        lines = [0.0, 10.290664, 10.290664365987631, 20.0]
+        merged = _merge_close(lines)
+        assert merged == [0.0, 10.290664, 20.0]
+
+    def test_no_degenerate_spacing_in_built_spec(self, spec):
+        for axis in ("x", "y", "z"):
+            lines = spec["mesh"][axis]
+            gaps = [b - a for a, b in itertools.pairwise(lines)]
+            assert min(gaps) > 1e-3, f"degenerate {axis} mesh spacing: {min(gaps)}"

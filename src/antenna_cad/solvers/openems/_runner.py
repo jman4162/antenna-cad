@@ -50,21 +50,51 @@ def main(spec_path: str) -> int:
         points = np.array(entry["polygon"]).T  # -> [[xs], [ys]]
         metal.AddPolygon(points, "z", entry["z"], priority=10)
 
-    port_spec = spec["port"]
-    port = fdtd.AddLumpedPort(
-        1,
-        port_spec["resistance"],
-        port_spec["start"],
-        port_spec["stop"],
-        port_spec["direction"],
-        1.0,
-        priority=5,
-        edges2grid="xy",
-    )
-
     for axis in ("x", "y", "z"):
         mesh.AddLine(axis, spec["mesh"][axis])
     mesh.SmoothMeshLines("all", spec["mesh"]["max_res"], spec["mesh"]["ratio"])
+
+    port_spec = spec["port"]
+    if port_spec["type"] == "msl":
+        pec = csx.AddMetal("msl_port")
+        half_w = port_spec["width"] / 2
+        cx = port_spec["center_x"]
+        y0, y1 = port_spec["prop_span"]
+        # z runs top-of-substrate -> ground, exciting E downward (excite=-1), matching
+        # the upstream MSL tutorial convention.
+        start = [cx - half_w, y0, port_spec["z_top"]]
+        stop = [cx + half_w, y1, 0.0]
+        msl_kwargs = {
+            "FeedShift": port_spec["feed_shift"],
+            "MeasPlaneShift": port_spec["meas_shift"],
+            "priority": 5,
+        }
+        try:
+            port = fdtd.AddMSLPort(
+                1,
+                pec,
+                start,
+                stop,
+                "y",
+                "z",
+                excite=-1,
+                Feed_R=port_spec["resistance"],
+                **msl_kwargs,
+            )
+        except TypeError:
+            # Older bindings without Feed_R support.
+            port = fdtd.AddMSLPort(1, pec, start, stop, "y", "z", excite=-1, **msl_kwargs)
+    else:
+        port = fdtd.AddLumpedPort(
+            1,
+            port_spec["resistance"],
+            port_spec["start"],
+            port_spec["stop"],
+            port_spec["direction"],
+            1.0,
+            priority=5,
+            edges2grid="xy",
+        )
 
     nf2ff = fdtd.CreateNF2FFBox()
 

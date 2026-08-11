@@ -11,11 +11,17 @@ nothing depends on one.
 
 ## Status
 
-Pre-alpha. The first milestone is a closed loop for a single rectangular microstrip
-patch: requirements → synthesis → layout → KiCad DRC → openEMS S11/pattern → report.
-Corporate-fed arrays (placement from
-[phased-array-modeling](https://github.com/jman4162/Phased-Array-Antenna-Model),
-Wilkinson feed trees, length matching) come next. Nothing here is ready for use yet.
+Pre-alpha; the single-patch closed loop works end to end. From the example spec, the
+toolchain synthesizes a 10 GHz inset-fed patch on RO4350B, emits a KiCad board that
+passes DRC with zero violations, and verifies it with openEMS FDTD: resonance within
+2% of target, S11 below -10 dB, 6.8 dBi directivity. A simulation-feedback tuner
+(`--tune`) corrects residual analytic-model error. Corporate-fed arrays (placement
+from [phased-array-modeling](https://github.com/jman4162/Phased-Array-Antenna-Model),
+Wilkinson feed trees, length matching) come next. APIs are unstable.
+
+```bash
+uv run antenna-cad report examples/patch_10ghz/spec.yaml -o build/patch_10ghz
+```
 
 ## Design principles
 
