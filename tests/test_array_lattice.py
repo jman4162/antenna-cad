@@ -86,7 +86,7 @@ class TestArraySection:
         assert section.spacing_mm(10e9) == (pytest.approx(18.0), pytest.approx(20.0))
 
     def test_bad_spacing_rejected(self):
-        with pytest.raises(ValueError, match="quantity|magnitude"):
+        with pytest.raises(ValueError, match=r"quantity|magnitude"):
             ArraySection(nx=2, ny=2, spacing="wide")
 
 

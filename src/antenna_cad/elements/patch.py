@@ -11,10 +11,13 @@ simulation loop (:mod:`antenna_cad.tune`) closes the rest.
 from __future__ import annotations
 
 import math
+from typing import Any
 
 import numpy as np
 from pydantic import BaseModel, ConfigDict
 from scipy.special import j0
+from shapely.affinity import scale as shapely_scale
+from shapely.affinity import translate as shapely_translate
 from shapely.geometry import box
 from shapely.ops import unary_union
 
@@ -136,6 +139,38 @@ class RectangularPatch(BaseModel):
             eps_eff=effective_permittivity(w_m, h_m, eps_r),
             edge_resistance_ohm=r_edge,
         )
+
+    def cell_copper(self, center: tuple[float, float], mirrored: bool = False) -> Any:
+        """Patch copper cell (radiator + inset notch + internal feed stub), placed.
+
+        Returns a Shapely polygon centered at ``center`` (mm). The internal feed
+        stub runs from the inset point out to the patch's feed edge, where an
+        external line connects. ``mirrored`` rotates the cell 180 degrees so the
+        feed edge faces +y instead of -y (used by array rows fed from above; the
+        radiated field flips phase, which the feed tree compensates).
+        """
+        w = to_mm(self.width)
+        length = to_mm(self.length)
+        y0 = to_mm(self.inset)
+        gap = to_mm(self.inset_gap)
+        feed_w = to_mm(self.feed_width)
+
+        patch_poly = box(-w / 2, -length / 2, w / 2, length / 2)
+        notch = box(
+            -feed_w / 2 - gap,
+            -length / 2 - 1e-3,  # overlap slightly so the difference is clean
+            feed_w / 2 + gap,
+            -length / 2 + y0,
+        )
+        stub = box(-feed_w / 2, -length / 2 - 1e-3, feed_w / 2, -length / 2 + y0)
+        cell = unary_union([patch_poly.difference(notch), stub])
+        if mirrored:
+            cell = shapely_scale(cell, xfact=1.0, yfact=-1.0, origin=(0, 0))
+        return shapely_translate(cell, xoff=center[0], yoff=center[1])
+
+    def feed_edge_offset(self) -> float:
+        """Distance from patch center to the feed edge (half the resonant length)."""
+        return to_mm(self.length) / 2
 
     def to_design(self, name: str = "patch") -> PhysicalDesign:
         """Realize the patch as a two-layer board with ground plane and edge port.

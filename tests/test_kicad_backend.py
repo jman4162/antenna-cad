@@ -99,3 +99,21 @@ def test_dxf_export(design, tmp_path):
     doc = ezdxf.readfile(path)
     layers = {layer.dxf.name for layer in doc.layers}
     assert {"EDGE", "TOP", "BOTTOM"} <= layers
+
+
+@needs_kicad
+class TestArrayBoards:
+    @pytest.mark.kicad
+    @pytest.mark.parametrize(("nx", "ny"), [(2, 2), (4, 4)])
+    def test_array_drc_clean(self, tmp_path, nx, ny):
+        from antenna_cad.arrays.layout import realize_array
+        from antenna_cad.elements import RectangularPatch
+        from antenna_cad.integrations.phased_array import rectangular_lattice
+
+        patch = RectangularPatch.synthesize(DesignProblem(center_frequency="10 GHz"))
+        spacing = 0.6 * 29.9792458
+        lattice = rectangular_lattice(nx, ny, spacing, spacing)
+        board = write_kicad_project(realize_array(patch, lattice, f"a{nx}x{ny}"), tmp_path)
+        report = KicadCli().drc(board)
+        assert report.error_count == 0, report.summary()
+        assert not report.unconnected_items
