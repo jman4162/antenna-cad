@@ -1,5 +1,9 @@
 # antenna-cad
 
+> Design compiler for antenna and phased-array PCBs: YAML spec in — synthesized
+> layout, KiCad DRC, and openEMS full-wave verification out. Deterministic Python
+> core, agent-ready via MCP.
+
 [![PyPI](https://img.shields.io/pypi/v/antenna-cad.svg?logo=pypi&logoColor=white)](https://pypi.org/project/antenna-cad/)
 [![Python versions](https://img.shields.io/pypi/pyversions/antenna-cad.svg?logo=python&logoColor=white)](https://pypi.org/project/antenna-cad/)
 [![CI](https://img.shields.io/github/actions/workflow/status/jman4162/antenna-cad/ci.yml?branch=main&label=CI&logo=github)](https://github.com/jman4162/antenna-cad/actions/workflows/ci.yml)
@@ -150,3 +154,8 @@ an archival DOI is planned):
 ## License
 
 MIT
+
+---
+
+`#antenna` `#phased-array` `#kicad` `#pcb-design` `#openems` `#fdtd` `#microstrip`
+`#patch-antenna` `#rf` `#electromagnetics` `#eda` `#mcp` `#python`
