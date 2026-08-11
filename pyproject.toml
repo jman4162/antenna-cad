@@ -38,6 +38,7 @@ classifiers = [
 ]
 dependencies = [
   "numpy>=1.26",
+  "scipy>=1.11",
   "shapely>=2.0",
   "pint>=0.24",
   "pydantic>=2.7",
