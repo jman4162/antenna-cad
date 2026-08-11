@@ -15,6 +15,8 @@ correction the closed loop supports.
 from __future__ import annotations
 
 import math
+from collections.abc import Callable
+from typing import Any
 
 from pydantic import BaseModel, ConfigDict
 
@@ -52,16 +54,34 @@ class TuneOutcome(BaseModel):
         return abs(last.f_res_hz - target) / target < 0.02 and last.s11_min_db < -10
 
 
-def _corrected(patch: RectangularPatch, result: SimulationResult) -> RectangularPatch:
-    """One corrective step from measured resonance and input resistance."""
+def _corrected(
+    patch: RectangularPatch, result: SimulationResult, adjust_inset: bool = True
+) -> RectangularPatch:
+    """One corrective step from measured resonance and (optionally) input resistance.
+
+    ``adjust_inset=False`` limits the correction to frequency scaling — right for
+    arrays, where the port sees the feed network rather than the raw patch
+    resistance.
+    """
     import numpy as np
 
     problem = patch.problem
     f_target = to_hz(problem.center_frequency)
     f_res = result.metrics["f_res_hz"]
 
-    length_mm = to_mm(patch.length) * f_res / f_target
-    inset_mm = to_mm(patch.inset) * f_res / f_target  # keep relative position first
+    # Damped correction: clip the per-iteration scale so one misidentified dip
+    # cannot fling the geometry far from the analytic starting point.
+    scale = min(max(f_res / f_target, 0.95), 1.05)
+    length_mm = to_mm(patch.length) * scale
+    inset_mm = to_mm(patch.inset) * scale  # keep relative position first
+
+    if not adjust_inset:
+        return patch.model_copy(
+            update={
+                "length": Quantity(length_mm, "mm"),
+                "inset": Quantity(inset_mm, "mm"),
+            }
+        )
 
     zin = result.s_parameters["zin"]
     freq = result.s_parameters["frequency"]
@@ -87,12 +107,28 @@ def tune_patch(
     solver: EMSolver,
     config: SimulationConfig | None = None,
     max_iterations: int = 3,
+    realize: Callable[[RectangularPatch], Any] | None = None,
+    adjust_inset: bool = True,
 ) -> TuneOutcome:
-    """Iterate simulate-and-correct until the patch meets frequency and match targets."""
+    """Iterate simulate-and-correct until the design meets frequency and match targets.
+
+    ``realize`` maps the patch to the design under test (defaults to the single-patch
+    board); pass an array builder to tune a whole array by uniform element scaling,
+    with ``adjust_inset=False``.
+    """
     config = config or SimulationConfig()
+    if realize is None:
+        realize = lambda p: p.to_design()
     steps: list[TuneStep] = []
     current = patch
-    result = solver.simulate(current.to_design(), config)
+    result = solver.simulate(realize(current), config)
+    # Ranked (unmatched?, frequency error): a matched iterate always beats an
+    # unmatched one, then closer-to-target wins.
+    best: tuple[tuple[bool, float], RectangularPatch, SimulationResult] = (
+        (True, float("inf")),
+        current,
+        result,
+    )
     while True:
         steps.append(
             TuneStep(
@@ -104,11 +140,19 @@ def tune_patch(
             )
         )
         f_target = to_hz(current.problem.center_frequency)
-        on_frequency = abs(result.metrics["f_res_hz"] - f_target) / f_target < 0.02
+        error = abs(result.metrics["f_res_hz"] - f_target) / f_target
         matched = result.metrics["s11_min_db"] < -10
-        if (on_frequency and matched) or len(steps) > max_iterations:
+        score = (not matched, error)
+        if score < best[0]:
+            best = (score, current, result)
+        if (error < 0.02 and matched) or len(steps) > max_iterations:
             break
-        current = _corrected(current, result)
-        result = solver.simulate(current.to_design(), config)
+        if len(steps) >= 2:
+            previous_error = abs(steps[-2].f_res_hz - f_target) / f_target
+            if error >= previous_error:
+                break  # correction is not converging; keep the best iterate
+        current = _corrected(current, result, adjust_inset=adjust_inset)
+        result = solver.simulate(realize(current), config)
 
-    return TuneOutcome(patch=current, result=result, steps=tuple(steps))
+    _, best_patch, best_result = best
+    return TuneOutcome(patch=best_patch, result=best_result, steps=tuple(steps))

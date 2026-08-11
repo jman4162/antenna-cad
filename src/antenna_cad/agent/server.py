@@ -25,7 +25,7 @@ def _get_server() -> Any:
         try:
             from mcp.server.fastmcp import FastMCP
         except ImportError:
-            from mcp.server import MCPServer as FastMCP  # type: ignore[assignment]
+            from mcp.server import MCPServer as FastMCP
     except ImportError as exc:  # pragma: no cover - exercised only without the extra
         raise ImportError(
             "the MCP server needs the 'mcp' extra: pip install antenna-cad[mcp]"
@@ -53,4 +53,4 @@ def get_mcp() -> Any:
 
 def run_server(transport: str = "stdio") -> None:
     """Start the MCP server (stdio transport by default)."""
-    _get_server().run(transport=transport)  # type: ignore[arg-type]
+    _get_server().run(transport=transport)

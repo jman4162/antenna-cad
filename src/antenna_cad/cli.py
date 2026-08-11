@@ -112,13 +112,29 @@ def report(
         from antenna_cad.elements import RectangularPatch
         from antenna_cad.tune import tune_patch
 
-        outcome = tune_patch(RectangularPatch.synthesize(loaded.problem), solver)
+        patch = RectangularPatch.synthesize(loaded.problem)
+        if loaded.array is not None:
+            from antenna_cad.arrays.layout import realize_array
+            from antenna_cad.core.units import to_hz
+            from antenna_cad.integrations.phased_array import rectangular_lattice
+            from antenna_cad.ir import PhysicalDesign
+
+            dx, dy = loaded.array.spacing_mm(to_hz(loaded.problem.center_frequency))
+            lattice = rectangular_lattice(loaded.array.nx, loaded.array.ny, dx, dy)
+
+            def realize(p: RectangularPatch) -> PhysicalDesign:
+                return realize_array(p, lattice, name=loaded.name)
+
+            outcome = tune_patch(patch, solver, realize=realize, adjust_inset=False)
+            design = realize(outcome.patch)
+        else:
+            outcome = tune_patch(patch, solver)
+            design = outcome.patch.to_design(name=loaded.name)
         for step in outcome.steps:
             typer.echo(
                 f"tune {step.iteration}: f_res {step.f_res_hz / 1e9:.3f} GHz, "
                 f"S11 {step.s11_min_db:.1f} dB"
             )
-        design = outcome.patch.to_design(name=loaded.name)
     design.to_yaml(output / f"{design.name}.design.yaml")
     result = verify_design(design, output, solver=solver)
     typer.echo(Path(output, "report.md").read_text())

@@ -133,14 +133,24 @@ class OpenEMS:
         )
 
         s11_db = 20 * np.log10(np.abs(s11))
-        idx = int(np.argmin(s11_db))
+        # Report the match at the resonance the runner identified (its edge-guarded
+        # search), not the global minimum, which can be a band-edge artifact.
+        res_idx = int(np.argmin(np.abs(f - data["f_res"])))
         metrics: dict[str, float] = {
             "f_res_hz": float(data["f_res"]),
-            "s11_min_db": float(s11_db[idx]),
+            "s11_min_db": float(s11_db[res_idx]),
         }
-        below = f[s11_db <= -10.0]
-        if below.size:
-            metrics["bandwidth_10db_hz"] = float(below.max() - below.min())
+        # -10 dB bandwidth of the contiguous band containing the resonance (other
+        # dips elsewhere in the sweep must not inflate it).
+        below = s11_db <= -10.0
+        if below[res_idx]:
+            lo = res_idx
+            while lo > 0 and below[lo - 1]:
+                lo -= 1
+            hi = res_idx
+            while hi < len(f) - 1 and below[hi + 1]:
+                hi += 1
+            metrics["bandwidth_10db_hz"] = float(f[hi] - f[lo])
 
         far_field = None
         if "e_norm" in data:

@@ -123,11 +123,23 @@ def main(spec_path: str) -> int:
     zin = port.uf_tot / port.if_tot
     p_in = 0.5 * np.real(port.uf_tot * np.conj(port.if_tot))
 
-    # Search for resonance away from the sweep edges: the Gaussian excitation has
-    # little energy there, so the S11 ratio is noise and can produce spurious dips.
+    # Identify the resonance: prefer the matched dip NEAREST the design frequency
+    # (feed networks add extra dips; the deepest one is not always the antenna),
+    # searching away from the sweep edges where the excitation has no energy and
+    # the S11 ratio is noise.
     guard = max(1, len(f) // 10)
     s11_db = 20 * np.log10(np.abs(s11) + 1e-12)
-    idx_res = guard + int(np.argmin(s11_db[guard:-guard]))
+    interior = np.arange(guard, len(f) - guard)
+    local_min = interior[
+        (s11_db[interior] <= np.roll(s11_db, 1)[interior])
+        & (s11_db[interior] <= np.roll(s11_db, -1)[interior])
+        & (s11_db[interior] < -6.0)
+    ]
+    f_target = freq.get("f_target", freq["f0"])
+    if local_min.size:
+        idx_res = int(local_min[np.argmin(np.abs(f[local_min] - f_target))])
+    else:
+        idx_res = guard + int(np.argmin(s11_db[guard:-guard]))
     f_res = float(f[idx_res])
 
     result: dict[str, Any] = {

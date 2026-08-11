@@ -31,6 +31,16 @@ def realize_array(
     h = to_mm(problem.substrate_height)
     lambda0_mm = SPEED_OF_LIGHT / to_hz(problem.center_frequency) * 1000
     margin = max(6 * h, lambda0_mm / 4)
+    # The bottom margin also hosts the trunk: reserve room for the quarter-wave
+    # transformer plus a usable 50-ohm run for the MSL simulation port.
+    from antenna_cad.transmission_lines.cells import quarter_wave_length
+    from antenna_cad.transmission_lines.microstrip import synthesize_width
+
+    z0 = float(problem.impedance.magnitude)
+    w_match = synthesize_width((z0 * z0 / 2) ** 0.5, h, problem.substrate_obj.eps_r)
+    trunk_reserve = quarter_wave_length(
+        to_hz(problem.center_frequency), w_match, h, problem.substrate_obj.eps_r
+    ) + max(6 * h, 3.0)
 
     # Array extent in centered coordinates.
     half_w = to_mm(patch.width) / 2
@@ -40,7 +50,7 @@ def realize_array(
     min_y = min(e.position[1] for e in lattice.elements) - half_l
     max_y = max(e.position[1] for e in lattice.elements) + half_l
 
-    y_bottom = min_y - margin
+    y_bottom = min_y - margin - trunk_reserve
     feed = build_corporate_feed(patch, lattice, y_bottom)
 
     cells = [

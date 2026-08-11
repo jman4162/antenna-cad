@@ -253,6 +253,7 @@ def build_spec(design: PhysicalDesign, config: SimulationConfig) -> dict[str, An
             "f_start": f_start,
             "f_stop": f_stop,
             "n_freq": config.n_freq,
+            "f_target": f0,
         },
         "end_criteria": config.end_criteria,
         "max_timesteps": config.max_timesteps,

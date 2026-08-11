@@ -137,8 +137,14 @@ warn_unreachable = true
 files = ["src/antenna_cad"]
 
 [[tool.mypy.overrides]]
-module = ["shapely.*", "skrf.*", "scipy.*", "pint.*", "phased_array.*", "CSXCAD.*", "openEMS.*"]
+module = ["shapely.*", "skrf.*", "scipy.*", "pint.*", "phased_array.*", "CSXCAD.*", "openEMS.*", "mcp.server.fastmcp.*"]
 ignore_missing_imports = true
+
+[[tool.mypy.overrides]]
+# The MCP server class is typed loosely (SDK 1.x/2.x compatibility), so its tool
+# decorator is Any; the tools themselves stay fully annotated.
+module = "antenna_cad.agent.*"
+disallow_untyped_decorators = false
 
 [[tool.mypy.overrides]]
 module = "tests.*"
