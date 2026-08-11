@@ -11,16 +11,18 @@ nothing depends on one.
 
 ## Status
 
-Pre-alpha; the single-patch closed loop works end to end. From the example spec, the
-toolchain synthesizes a 10 GHz inset-fed patch on RO4350B, emits a KiCad board that
-passes DRC with zero violations, and verifies it with openEMS FDTD: resonance within
-2% of target, S11 below -10 dB, 6.8 dBi directivity. A simulation-feedback tuner
-(`--tune`) corrects residual analytic-model error. Corporate-fed arrays (placement
-from [phased-array-modeling](https://github.com/jman4162/Phased-Array-Antenna-Model),
-Wilkinson feed trees, length matching) come next. APIs are unstable.
+Pre-alpha; the closed loop works end to end for single patches and corporate-fed
+arrays. From a spec file, the toolchain synthesizes the geometry (patch dimensions,
+T-junction feed tree with quarter-wave transformers and phase-compensated mirrored
+rows), emits a KiCad board that passes DRC with zero violations, and verifies it
+with openEMS FDTD. The 2x2 example, after simulation-feedback tuning (`--tune`):
+resonance 10.12 GHz against a 10 GHz target, S11 -14.8 dB, directivity 12.8 dBi,
+a single broadside beam. Lattice positions interoperate with
+[phased-array-modeling](https://github.com/jman4162/Phased-Array-Antenna-Model);
+an MCP server exposes the pipeline to agents. APIs are unstable.
 
 ```bash
-uv run antenna-cad report examples/patch_10ghz/spec.yaml -o build/patch_10ghz
+uv run antenna-cad report examples/array_2x2_10ghz/spec.yaml -o build/array_2x2 --tune
 ```
 
 ## Design principles
