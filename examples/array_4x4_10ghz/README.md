@@ -16,5 +16,11 @@ than part of the automated example:
 uv run antenna-cad report examples/array_4x4_10ghz/spec.yaml -o build/array_4x4
 ```
 
-Expected: broadside beam, directivity around 17-19 dBi, first sidelobes near -13 dB
-(uniform taper). Record measured metrics here after running.
+Measured (openEMS 0.37, Docker, 2026-08-10, untuned): f_res 9.68 GHz, directivity
+16.8 dBi, gain 15.4 dBi, sharp broadside beam with E-plane first sidelobes near
+-13 dB (H-plane shoulders around -8 dB from feed-network radiation). S11 tops out
+near -8 dB (VSWR 2.3:1) regardless of frequency tuning: the three-level feed tree's
+accumulated T-junction reactances and unmitered corners limit the match, where the
+two-level 2x2 reaches -14.8 dB. Corner miters and junction compensation are the
+known next steps; treat 4x4 boards as radiation-verified but match-limited in this
+release.
