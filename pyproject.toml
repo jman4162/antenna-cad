@@ -1,5 +1,7 @@
 [build-system]
-requires = ["hatchling>=1.27", "hatch-vcs>=0.4"]
+# hatchling 1.32 emits Metadata-Version 2.5, which twine (and the release
+# pipeline's checks) do not accept yet; cap until the toolchain catches up.
+requires = ["hatchling>=1.27,<1.32", "hatch-vcs>=0.4"]
 build-backend = "hatchling.build"
 
 [project]
