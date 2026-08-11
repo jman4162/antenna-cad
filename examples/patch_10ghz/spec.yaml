@@ -1,0 +1,12 @@
+design:
+  name: patch_10ghz
+
+requirements:
+  center_frequency: 10 GHz
+  impedance: 50 ohm
+  substrate: RO4350B
+  substrate_height: 0.508 mm
+  polarization: linear
+
+element:
+  type: rectangular_patch
