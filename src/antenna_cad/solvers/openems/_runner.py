@@ -51,7 +51,16 @@ def main(spec_path: str) -> int:
         metal.AddPolygon(points, "z", entry["z"], priority=10)
 
     for axis in ("x", "y", "z"):
-        mesh.AddLine(axis, spec["mesh"][axis])
+        lines = spec["mesh"][axis]
+        gaps = np.diff(np.sort(np.asarray(lines, dtype=float)))
+        if gaps.size and float(gaps.min()) < 5e-3:
+            # A near-degenerate cell collapses the FDTD timestep (CFL) and the
+            # excitation never completes; fail loudly instead of producing garbage.
+            raise RuntimeError(
+                f"degenerate {axis}-mesh: minimum line gap {gaps.min():.6f} mm; "
+                "the spec builder should have merged these"
+            )
+        mesh.AddLine(axis, lines)
     mesh.SmoothMeshLines("all", spec["mesh"]["max_res"], spec["mesh"]["ratio"])
 
     port_spec = spec["port"]
@@ -114,7 +123,11 @@ def main(spec_path: str) -> int:
     zin = port.uf_tot / port.if_tot
     p_in = 0.5 * np.real(port.uf_tot * np.conj(port.if_tot))
 
-    idx_res = int(np.argmin(np.abs(s11)))
+    # Search for resonance away from the sweep edges: the Gaussian excitation has
+    # little energy there, so the S11 ratio is noise and can produce spurious dips.
+    guard = max(1, len(f) // 10)
+    s11_db = 20 * np.log10(np.abs(s11) + 1e-12)
+    idx_res = guard + int(np.argmin(s11_db[guard:-guard]))
     f_res = float(f[idx_res])
 
     result: dict[str, Any] = {

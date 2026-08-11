@@ -125,6 +125,20 @@ def report(
     raise typer.Exit(0 if result.ok else 1)
 
 
+mcp_app = typer.Typer(help="Model Context Protocol server (install the 'mcp' extra).")
+app.add_typer(mcp_app, name="mcp")
+
+
+@mcp_app.command("serve")
+def mcp_serve(
+    transport: Annotated[str, typer.Option(help="Transport: stdio")] = "stdio",
+) -> None:
+    """Expose the design tools to MCP-compatible agents."""
+    from antenna_cad.agent.server import run_server
+
+    run_server(transport=transport)
+
+
 @app.command()
 def export(
     board: Annotated[Path, typer.Argument(help="A .kicad_pcb file")],

@@ -113,12 +113,28 @@ class TestMeshMerge:
     def test_close_lines_merge(self):
         from antenna_cad.solvers.openems.spec import _merge_close
 
-        lines = [0.0, 10.290664, 10.290664365987631, 20.0]
+        lines = [0.0, 10.290664, 10.290664365987631, 10.3, 20.0]
         merged = _merge_close(lines)
         assert merged == [0.0, 10.290664, 20.0]
+
+    def test_array_spec_has_no_degenerate_gaps(self):
+        import itertools
+
+        from antenna_cad.arrays.layout import realize_array
+        from antenna_cad.integrations.phased_array import rectangular_lattice
+
+        patch = RectangularPatch.synthesize(DesignProblem(center_frequency="10 GHz"))
+        s = 0.6 * 29.9792458
+        for nx, ny in ((2, 2), (4, 4)):
+            design = realize_array(patch, rectangular_lattice(nx, ny, s, s))
+            arr_spec = build_spec(design, SimulationConfig())
+            for axis in ("x", "y", "z"):
+                lines = arr_spec["mesh"][axis]
+                gaps = [b - a for a, b in itertools.pairwise(lines)]
+                assert min(gaps) > 0.019, f"{nx}x{ny} {axis}: {min(gaps)}"
 
     def test_no_degenerate_spacing_in_built_spec(self, spec):
         for axis in ("x", "y", "z"):
             lines = spec["mesh"][axis]
             gaps = [b - a for a, b in itertools.pairwise(lines)]
-            assert min(gaps) > 1e-3, f"degenerate {axis} mesh spacing: {min(gaps)}"
+            assert min(gaps) > 0.019, f"degenerate {axis} mesh spacing: {min(gaps)}"

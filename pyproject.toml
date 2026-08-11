@@ -52,6 +52,7 @@ dependencies = [
 [project.optional-dependencies]
 dxf = ["ezdxf>=1.3"]
 pam = ["phased-array-modeling>=1.4"]
+mcp = ["mcp>=1.26"]
 
 [project.scripts]
 antenna-cad = "antenna_cad.cli:app"
@@ -70,9 +71,11 @@ test = [
   "hypothesis[numpy]>=6.130",
 ]
 lint = ["mypy>=1.15", "ruff>=0.16", "types-PyYAML>=6.0"]
+mcp-test = ["mcp>=1.26"]
 dev = [
   { include-group = "test" },
   { include-group = "lint" },
+  { include-group = "mcp-test" },
 ]
 
 # ----------------------------------------------------------------- hatch / vcs

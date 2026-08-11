@@ -59,8 +59,11 @@ def _mesh_thirds(edges: list[float], polygons: list[Any], axis: int, res: float)
 
 #: Mesh lines closer than this (mm) merge into one. Two nearly-coincident lines make
 #: the FDTD timestep collapse (dt scales with the smallest cell), so exact-value
-#: dedupe is not enough.
-MESH_MERGE_TOL_MM = 1e-3
+#: dedupe is not enough. 20 um sits well below the finest intentional spacing (the
+#: thirds-rule lines at h/6 ~ 85 um) and far above degeneracy; the 2x2 array run
+#: showed 1 um was not conservative enough (a surviving 1 um cell cut the timestep
+#: a thousandfold and the excitation never finished).
+MESH_MERGE_TOL_MM = 0.02
 
 
 def _merge_close(lines: list[float], tol: float = MESH_MERGE_TOL_MM) -> list[float]:

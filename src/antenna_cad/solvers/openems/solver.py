@@ -48,10 +48,15 @@ def _docker_available() -> bool:
     docker = shutil.which("docker")
     if docker is None:
         return False
+    # `docker image ls` rather than `image inspect`: some daemons (containerd image
+    # store) reject inspect-by-name for locally built images.
     probe = subprocess.run(
-        [docker, "image", "inspect", DOCKER_IMAGE], capture_output=True, check=False
+        [docker, "image", "ls", DOCKER_IMAGE, "--format", "{{.Repository}}"],
+        capture_output=True,
+        text=True,
+        check=False,
     )
-    return probe.returncode == 0
+    return probe.returncode == 0 and DOCKER_IMAGE in probe.stdout
 
 
 class OpenEMS:
