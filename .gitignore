@@ -6,7 +6,7 @@ __pycache__/
 *.py[cod]
 *.egg-info/
 dist/
-.venv/
+.venv
 src/antenna_cad/_version.py
 
 # Tooling caches
