@@ -1,5 +1,7 @@
 """KiCad backend tests: S-expressions, emitted boards, and (if installed) real DRC."""
 
+import re
+
 import pytest
 
 from antenna_cad import DesignProblem
@@ -64,7 +66,12 @@ class TestEmitter:
 
     def test_golden_snapshot(self, design, tmp_path, file_regression):
         board = write_kicad_project(design, tmp_path)
-        file_regression.check(board.read_text(), extension=".kicad_pcb")
+        # The generator_version embeds the vcs-derived package version, which changes
+        # every commit; normalize it so the golden stays stable.
+        text = re.sub(
+            r'\(generator_version "[^"]*"\)', '(generator_version "X")', board.read_text()
+        )
+        file_regression.check(text, extension=".kicad_pcb")
 
 
 @needs_kicad

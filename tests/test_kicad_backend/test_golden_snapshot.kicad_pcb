@@ -1,7 +1,7 @@
 (kicad_pcb
 	(version 20240108)
 	(generator "antenna_cad")
-	(generator_version "0.0.0.dev3")
+	(generator_version "X")
 	(general (thickness 0.578) (legacy_teardrops no))
 	(paper "A4")
 	(layers (0 "F.Cu" signal) (31 "B.Cu" signal) (36 "B.SilkS" user) (37 "F.SilkS" user) (38 "B.Mask" user) (39 "F.Mask" user) (44 "Edge.Cuts" user) (46 "B.CrtYd" user) (47 "F.CrtYd" user) (48 "B.Fab" user) (49 "F.Fab" user))
