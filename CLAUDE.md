@@ -15,6 +15,9 @@ findings (KiCad emission strategy, openEMS toolchain, ecosystem APIs) is at
 
 ```bash
 uv sync --all-extras --group dev      # environment
+# .venv is a symlink to ~/.venvs/antenna-cad — keep it that way. iCloud syncs
+# ~/Documents and sets the macOS hidden flag on files inside a local .venv; CPython
+# then skips the hidden .pth and editable imports break with ModuleNotFoundError.
 uv run pytest                         # fast test suite (doctests included)
 uv run pytest -m "slow"               # EM simulation tests
 uv run pytest tests/test_foo.py::test_bar   # single test

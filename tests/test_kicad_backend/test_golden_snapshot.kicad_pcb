@@ -1,0 +1,62 @@
+(kicad_pcb
+	(version 20240108)
+	(generator "antenna_cad")
+	(generator_version "0.0.0.dev3")
+	(general (thickness 0.578) (legacy_teardrops no))
+	(paper "A4")
+	(layers (0 "F.Cu" signal) (31 "B.Cu" signal) (36 "B.SilkS" user) (37 "F.SilkS" user) (38 "B.Mask" user) (39 "F.Mask" user) (44 "Edge.Cuts" user) (46 "B.CrtYd" user) (47 "F.CrtYd" user) (48 "B.Fab" user) (49 "F.Fab" user))
+	(setup (pad_to_mask_clearance 0))
+	(net 0 "")
+	(net 1 "antenna/feed")
+	(net 2 "gnd")
+	(footprint
+		"antenna_cad:radiator_0"
+		(layer "F.Cu")
+		(uuid "3dd7760d-c71a-5125-96c1-26a8fd43bf0e")
+		(at 9.393813 13.776174)
+		(attr smd board_only exclude_from_pos_files exclude_from_bom allow_missing_courtyard)
+		(pad
+			"1"
+			smd
+			custom
+			(at 0 0)
+			(size 0.1 0.1)
+			(layers "F.Cu")
+			(net 1 "antenna/feed")
+			(uuid "0a524a21-b37c-503a-81e6-200998c3a4b2")
+			(options (clearance outline) (anchor rect))
+			(primitives
+				(gr_poly
+					(pts (xy 2.455007 -1.397926) (xy 1.899002 -1.397926) (xy 1.899002 1.397926) (xy -1.899002 1.397926) (xy -1.899002 -6.281362) (xy 7.921026 -6.281362) (xy 7.921026 1.397926) (xy 4.123022 1.397926) (xy 4.123022 -1.397926) (xy 3.567017 -1.397926) (xy 3.567017 8.882738) (xy 2.455007 8.882738))
+					(width 0)
+					(fill yes)
+				)
+			)
+		)
+	)
+	(zone
+		(net 2)
+		(net_name "gnd")
+		(layer "B.Cu")
+		(uuid "7e2b8ded-a12e-57db-aa0d-c8c0f7b0661e")
+		(hatch edge 0.5)
+		(connect_pads yes (clearance 0))
+		(min_thickness 0.25)
+		(filled_areas_thickness no)
+		(fill yes (thermal_gap 0.5) (thermal_bridge_width 0.5))
+		(polygon
+			(pts (xy 0.01 22.658911) (xy 0.01 0.01) (xy 24.799651 0.01) (xy 24.799651 22.658911))
+		)
+		(filled_polygon
+			(layer "B.Cu")
+			(pts (xy 0.01 22.658911) (xy 0.01 0.01) (xy 24.799651 0.01) (xy 24.799651 22.658911))
+		)
+	)
+	(gr_poly
+		(pts (xy 24.809651 22.668911) (xy 24.809651 0) (xy 0 0) (xy 0 22.668911))
+		(stroke (width 0.05) (type default))
+		(fill none)
+		(layer "Edge.Cuts")
+		(uuid "f533bfd8-5b9f-531c-8f1f-8bdcbe30d402")
+	)
+)
