@@ -4,6 +4,22 @@ All notable changes to antenna-cad are recorded here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); versions follow
 [SemVer](https://semver.org/).
 
+## [0.2.0] - 2026-08-11
+
+### Added
+- **`MeasuredSolver`** (`solvers/measured/`) — an `EMSolver` backed by a
+  measured Touchstone file, so a fabricated board flows through the same
+  `verify_design` gate a simulation faces. Requires the measurement
+  artifact contract's `.meta.yaml` provenance sidecar; scikit-rf (a
+  dependency since day one, previously unused) does the parsing, imported
+  lazily. CLI: `antenna-cad report --touchstone board.s2p`; `--tune` with
+  measured data is refused
+- **Configurable acceptance criteria** — `acceptance:` section in the
+  design spec (`AcceptanceCriteria`: `freq_tolerance`, `s11_max_db`,
+  `tune_freq_tolerance`), threaded through `verify_design`, `tune_patch`,
+  and `TuneOutcome.converged`. Defaults reproduce the previously
+  hardcoded 5% / -10 dB report gate and 2% tune convergence
+
 ## [0.1.1] - 2026-08-11
 
 ### Added
