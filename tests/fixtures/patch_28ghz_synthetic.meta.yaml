@@ -1,0 +1,10 @@
+instrument: "synthetic generator (series RLC model, R=40 ohm, Q=30, f0=28 GHz)"
+date: "2026-08-11"
+calibration_state: "not applicable (generated data)"
+uncertainty: "exact to the stated model"
+operator: "aedl-ecosystem tooling"
+synthetic: true
+notes: >
+  Exercises the measurement-contract format only. S11 at exactly 28 GHz is
+  -1/9 (-19.085 dB); S21 is 0.01 flat. Replace with a bench capture when
+  one exists; keep this file as the format test.

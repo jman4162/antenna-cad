@@ -93,16 +93,33 @@ def report(
     tune: Annotated[
         bool, typer.Option(help="Iterate simulate-and-correct before the final report")
     ] = False,
+    touchstone: Annotated[
+        Path | None,
+        typer.Option(
+            help="Verify against measured data (Touchstone + .meta.yaml sidecar) "
+            "instead of simulating"
+        ),
+    ] = None,
 ) -> None:
     """Run the full closed loop: synthesize, DRC, simulate, report."""
     from antenna_cad.designspec import DesignSpec
     from antenna_cad.report import verify_design
+    from antenna_cad.solvers import EMSolver
+
+    if tune and touchstone is not None:
+        raise typer.BadParameter(
+            "--tune cannot be combined with --touchstone: measured data cannot change"
+        )
 
     loaded = DesignSpec.load(spec)
     design = loaded.synthesize()
     output.mkdir(parents=True, exist_ok=True)
-    solver = None
-    if solver_mode != "off":
+    solver: EMSolver | None = None
+    if touchstone is not None:
+        from antenna_cad.solvers.measured import MeasuredSolver
+
+        solver = MeasuredSolver(touchstone)
+    elif solver_mode != "off":
         from antenna_cad.solvers.openems import OpenEMS, OpenEMSNotAvailableError
 
         try:
@@ -137,7 +154,7 @@ def report(
                 f"S11 {step.s11_min_db:.1f} dB"
             )
     design.to_yaml(output / f"{design.name}.design.yaml")
-    result = verify_design(design, output, solver=solver)
+    result = verify_design(design, output, solver=solver, acceptance=loaded.acceptance)
     typer.echo(Path(output, "report.md").read_text())
     raise typer.Exit(0 if result.ok else 1)
 

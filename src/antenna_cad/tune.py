@@ -21,6 +21,7 @@ from typing import Any
 from pydantic import BaseModel, ConfigDict
 
 from antenna_cad.core.units import Quantity, to_hz, to_mm, to_ohm
+from antenna_cad.designspec import AcceptanceCriteria
 from antenna_cad.elements.patch import RectangularPatch
 from antenna_cad.solvers.base import EMSolver, SimulationConfig, SimulationResult
 
@@ -45,13 +46,17 @@ class TuneOutcome(BaseModel):
     patch: RectangularPatch
     result: SimulationResult
     steps: tuple[TuneStep, ...]
+    acceptance: AcceptanceCriteria = AcceptanceCriteria()
 
     @property
     def converged(self) -> bool:
         """True when the last step met the frequency and match targets."""
         last = self.steps[-1]
         target = to_hz(self.patch.problem.center_frequency)
-        return abs(last.f_res_hz - target) / target < 0.02 and last.s11_min_db < -10
+        return (
+            abs(last.f_res_hz - target) / target < self.acceptance.tune_freq_tolerance
+            and last.s11_min_db < self.acceptance.s11_max_db
+        )
 
 
 def _corrected(
@@ -109,6 +114,7 @@ def tune_patch(
     max_iterations: int = 3,
     realize: Callable[[RectangularPatch], Any] | None = None,
     adjust_inset: bool = True,
+    acceptance: AcceptanceCriteria | None = None,
 ) -> TuneOutcome:
     """Iterate simulate-and-correct until the design meets frequency and match targets.
 
@@ -117,6 +123,7 @@ def tune_patch(
     with ``adjust_inset=False``.
     """
     config = config or SimulationConfig()
+    criteria = acceptance or AcceptanceCriteria()
     if realize is None:
         realize = lambda p: p.to_design()
     steps: list[TuneStep] = []
@@ -141,11 +148,11 @@ def tune_patch(
         )
         f_target = to_hz(current.problem.center_frequency)
         error = abs(result.metrics["f_res_hz"] - f_target) / f_target
-        matched = result.metrics["s11_min_db"] < -10
+        matched = result.metrics["s11_min_db"] < criteria.s11_max_db
         score = (not matched, error)
         if score < best[0]:
             best = (score, current, result)
-        if (error < 0.02 and matched) or len(steps) > max_iterations:
+        if (error < criteria.tune_freq_tolerance and matched) or len(steps) > max_iterations:
             break
         if len(steps) >= 2:
             previous_error = abs(steps[-2].f_res_hz - f_target) / f_target
@@ -155,4 +162,6 @@ def tune_patch(
         result = solver.simulate(realize(current), config)
 
     _, best_patch, best_result = best
-    return TuneOutcome(patch=best_patch, result=best_result, steps=tuple(steps))
+    return TuneOutcome(
+        patch=best_patch, result=best_result, steps=tuple(steps), acceptance=criteria
+    )

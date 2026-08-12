@@ -8,18 +8,16 @@ provenance, comparing achieved metrics against the requirements.
 from __future__ import annotations
 
 from pathlib import Path
-from typing import TYPE_CHECKING, Any
+from typing import Any
 
 from pydantic import BaseModel, ConfigDict
 
 from antenna_cad.backends.kicad.cli import KicadCli, KicadCliNotFoundError
 from antenna_cad.backends.kicad.emitter import write_kicad_project
 from antenna_cad.core.units import to_ghz
+from antenna_cad.designspec import AcceptanceCriteria
 from antenna_cad.ir import PhysicalDesign
-from antenna_cad.solvers.base import SimulationConfig, SimulationResult
-
-if TYPE_CHECKING:
-    from antenna_cad.solvers.base import EMSolver
+from antenna_cad.solvers.base import EMSolver, SimulationConfig, SimulationResult
 
 
 class StepOutcome(BaseModel):
@@ -115,6 +113,7 @@ def verify_design(
     drc: bool = True,
     solver: EMSolver | None = None,
     sim_config: SimulationConfig | None = None,
+    acceptance: AcceptanceCriteria | None = None,
 ) -> VerificationReport:
     """Run the closed verification loop and write ``report.md`` plus artifacts.
 
@@ -146,6 +145,7 @@ def verify_design(
         steps.append(StepOutcome(name="kicad_drc", status="skipped", detail="disabled"))
 
     if solver is not None:
+        criteria = acceptance or AcceptanceCriteria()
         result = solver.simulate(design, sim_config)
         metrics.update(result.metrics)
         f0 = to_ghz(design.frequency)
@@ -155,10 +155,13 @@ def verify_design(
             f"f_res = {f_res:.3f} GHz (target {f0:g} GHz, {error:.1%} off), "
             f"S11 min = {metrics.get('s11_min_db', 0):.1f} dB"
         )
+        passed = (
+            error < criteria.freq_tolerance and metrics.get("s11_min_db", 0) < criteria.s11_max_db
+        )
         steps.append(
             StepOutcome(
                 name="em_simulation",
-                status="pass" if error < 0.05 and metrics.get("s11_min_db", 0) < -10 else "fail",
+                status="pass" if passed else "fail",
                 detail=detail,
             )
         )

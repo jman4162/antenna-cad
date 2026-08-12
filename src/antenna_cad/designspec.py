@@ -93,6 +93,23 @@ def _resolve_spacing(text: str, frequency_hz: float) -> float:
     return to_mm(as_quantity(text, "length"))
 
 
+class AcceptanceCriteria(BaseModel):
+    """Pass/fail thresholds for verification and tuning.
+
+    Defaults reproduce the previously hardcoded values: 5% resonance
+    offset and -10 dB match for the report gate, 2% for tune convergence.
+    """
+
+    model_config = ConfigDict(frozen=True)
+
+    #: Max fractional resonance offset |f_res - f0| / f0 for a report pass.
+    freq_tolerance: float = 0.05
+    #: Required S11 minimum (dB); the design must match at least this well.
+    s11_max_db: float = -10.0
+    #: Tighter fractional offset the tune loop iterates toward.
+    tune_freq_tolerance: float = 0.02
+
+
 class DesignSpec(BaseModel):
     """A parsed spec file: a named problem, element type, and optional array."""
 
@@ -102,6 +119,7 @@ class DesignSpec(BaseModel):
     problem: DesignProblem
     element_type: str = "rectangular_patch"
     array: ArraySection | None = None
+    acceptance: AcceptanceCriteria = AcceptanceCriteria()
 
     @classmethod
     def load(cls, path: str | Path) -> DesignSpec:
@@ -119,7 +137,18 @@ class DesignSpec(BaseModel):
             )
         problem = DesignProblem.model_validate(data["requirements"])
         array = ArraySection.model_validate(data["array"]) if "array" in data else None
-        return cls(name=name, problem=problem, element_type=element_type, array=array)
+        acceptance = (
+            AcceptanceCriteria.model_validate(data["acceptance"])
+            if "acceptance" in data
+            else AcceptanceCriteria()
+        )
+        return cls(
+            name=name,
+            problem=problem,
+            element_type=element_type,
+            array=array,
+            acceptance=acceptance,
+        )
 
     def synthesize(self) -> PhysicalDesign:
         """Synthesize and return the realized ``PhysicalDesign`` (element or array)."""
