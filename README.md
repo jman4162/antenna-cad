@@ -141,6 +141,11 @@ The MCP surface follows the family convention documented in
 same server layout, tool naming, error contract, and path-safety rules, so an
 agent connected to both servers sees one house style.
 
+Measured data (the `MeasuredSolver` Touchstone path) follows the family's
+[measurement artifact contract](https://github.com/jman4162/agentic-phased-array-builder/blob/main/docs/measurement-contract.md):
+every measured dataset carries a `.meta.yaml` provenance sidecar, and
+synthetic data says so.
+
 ## Citing
 
 If antenna-cad contributes to academic work, please cite it (GitHub's "Cite this
